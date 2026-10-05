@@ -1,0 +1,5 @@
+شهادة لكل مشارك، من ملف Excel واحد. ارفع الأسماء، اختار القالب والخط واللون، ونزّل ZIP فيه PDF باسم كل واحد، والعربي مكتوب صح. كله بالمتصفح، وملفاتك ما بتطلع من جهازك.
+
+---
+English version:
+One Excel file in, one certificate PDF per participant out, each named after the person. Pick a template, font and color, then download the ZIP. Arabic renders properly, and everything runs in your browser, so your files never leave your device.

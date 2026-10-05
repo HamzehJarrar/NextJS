@@ -1,0 +1,11 @@
+import puppeteer from "puppeteer-core";
+const browser = await puppeteer.launch({ executablePath: "C:/Program Files/Google/Chrome/Application/chrome.exe", headless: true });
+const page = await browser.newPage();
+await page.setViewport({ width: 1600, height: 1000 });
+await page.evaluateOnNewDocument(() => { try { localStorage.setItem("theme", "light"); localStorage.setItem("lang", "ar"); } catch {} });
+await page.goto("http://localhost:3000", { waitUntil: "networkidle0" });
+const input = await page.$('input[type=file][accept=".xlsx,.xls,.csv"]');
+await input.uploadFile("D:/Projects/Nextjs/certificate-generator/public/sample-participants.xlsx");
+await new Promise(r => setTimeout(r, 1500));
+await page.screenshot({ path: "ref-app.png" });
+await browser.close();

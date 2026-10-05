@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=block" rel="stylesheet" />
+<!-- the app's real compiled stylesheet (Tailwind output from the dev server) -->
+<link rel="stylesheet" href="app.css" />
+<style>
+  /* frames must be a pure function of t: kill every CSS transition/animation from the app's classes */
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; }
+  #stage { position: relative; z-index: 1; width: 1920px; height: 1080px; overflow: hidden; }
+  .abs { position: absolute; will-change: transform, opacity; }
+  .abs, .scaled, .thumb, .cert { left: 0; top: 0; }
+  .display { font-family: Cairo, sans-serif; font-weight: 800; color: #1f1c17; letter-spacing: -0.01em; }
+  .cert { position: absolute; border-radius: 6px; box-shadow: 0 2px 6px rgb(60 45 20 / 0.10), 0 30px 60px -24px rgb(60 45 20 / 0.40); }
+  .scaled { position: absolute; transform-origin: top left; }
+  .file-chip { display: flex; align-items: center; gap: 18px; padding: 16px 26px 16px 18px; background: #fff; border-radius: 18px;
+    box-shadow: 0 2px 4px rgb(60 45 20 / 0.08), 0 24px 48px -16px rgb(60 45 20 / 0.45); font: 600 30px "IBM Plex Sans Arabic", sans-serif; color: #1f1c17; direction: ltr; white-space: nowrap; }
+  .xls { width: 58px; height: 70px; border-radius: 8px; background: #1d6f42; color: #fff; display: grid; place-items: center; font: 800 34px Cairo, sans-serif; position: relative; }
+  .xls::after { content: ""; position: absolute; top: 0; right: 0; border-width: 0 16px 16px 0; border-style: solid; border-color: #f4f1ea #f4f1ea #134d2e #134d2e; }
+  .row { display: flex; align-items: center; gap: 20px; width: 600px; padding: 20px 26px; background: #fff; border-radius: 16px; box-shadow: 0 1px 3px rgb(60 45 20 / 0.10);
+    font: 600 34px "IBM Plex Sans Arabic", sans-serif; color: #1f1c17; }
+  .row .check { width: 40px; height: 40px; border-radius: 999px; background: #b45309; color: #fff; display: grid; place-items: center; font-size: 24px; flex: none; }
+  .row .id { margin-inline-start: auto; font: 500 22px "IBM Plex Sans Arabic", sans-serif; color: #78716c; direction: ltr; }
+  .thumb { position: absolute; width: 380px; text-align: center; }
+  .thumb .fname { margin-top: 18px; font: 600 26px "IBM Plex Sans Arabic", sans-serif; color: #44403c; unicode-bidi: isolate; }
+  .thumb .badge { position: absolute; top: -14px; left: -14px; background: #b45309; color: #fff; font: 800 20px Cairo, sans-serif; padding: 4px 12px; border-radius: 8px; }
+  .ripple { position: absolute; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 999px; border: 4px solid #d97706; }
+  .gold-line { position: absolute; height: 5px; background: #b08d3a; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="stage">
+
+  <!-- 1 · HOOK -->
+  <div id="s1">
+    <div id="hookCards"></div>
+    <div id="hook1" class="abs display" style="left:0;width:1920px;top:62px;text-align:center;font-size:80px;">شهادة لكل مشارك.</div>
+    <div id="hook2" class="abs display" style="left:0;width:1920px;top:168px;text-align:center;font-size:80px;color:#b08d3a;">ولا اسم بتكتبه بإيدك.</div>
+  </div>
+
+  <!-- 2 · REVEAL -->
+  <div id="s2">
+    <div id="revealTitle" class="abs display" style="left:0;width:1920px;top:330px;text-align:center;font-size:150px;line-height:1.2;"><span>🎓</span> مولّد الشهادات</div>
+    <div id="revealLine" class="gold-line" style="left:760px;top:545px;width:400px;"></div>
+    <div id="revealSub" class="abs" style="left:0;width:1920px;top:590px;text-align:center;font:500 54px 'IBM Plex Sans Arabic',sans-serif;color:#57534e;"></div>
+  </div>
+
+  <!-- 3 · UPLOAD (real app markup, scaled up) -->
+  <div id="s3">
+    <div id="uploadCard" class="scaled" style="width:520px;">
+      <div class="rounded-2xl bg-white p-5 shadow-sm">
+        <h2 class="mb-3 text-lg font-bold">1. ملف المشاركين</h2>
+        <label id="dropZone" class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-8 text-center cursor-pointer transition border-stone-300 bg-white">
+          <span class="text-3xl" aria-hidden="true">📄</span>
+          <span id="dropText" class="font-semibold">اسحب ملف Excel أو CSV هون، أو اضغط لتختار</span>
+          <span class="text-sm text-stone-500">لازم يكون فيه عمود اسمه “الاسم” أو “name”</span>
+        </label>
+        <a class="mt-2 inline-block text-sm text-amber-700 underline">نزّل ملف مثال</a>
+      </div>
+    </div>
+    <div id="fileChip" class="abs file-chip"><div class="xls">X</div>sample-participants.xlsx</div>
+    <div id="rows"></div>
+  </div>
+
+  <!-- 4 · DESIGN -->
+  <div id="s4">
+    <div id="designCaption" class="abs display" style="left:110px;width:980px;top:88px;text-align:center;font-size:62px;">٣ قوالب، ١٢ خط، وأي لون</div>
+    <div id="designCerts"></div>
+    <div id="settingsCard" class="scaled" style="width:420px;">
+      <div class="rounded-2xl bg-white p-5 shadow-sm">
+        <h2 class="mb-3 text-lg font-bold">2. تصميم الشهادة</h2>
+        <div class="space-y-4">
+          <div>
+            <span class="text-sm font-semibold text-stone-700">القالب</span>
+            <div class="mt-1 grid grid-cols-3 gap-2">
+              <button id="tplclassic" class="rounded-lg border px-3 py-2 font-semibold">كلاسيكي</button>
+              <button id="tplmodern" class="rounded-lg border px-3 py-2 font-semibold">عصري</button>
+              <button id="tplminimal" class="rounded-lg border px-3 py-2 font-semibold">بسيط</button>
+            </div>
+          </div>
+          <label class="block">
+            <span class="text-sm font-semibold text-stone-700">خط الشهادة</span>
+            <div id="fontSelect" class="mt-1 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-stone-900" style="display:flex;justify-content:space-between;">
+              <span id="fontValue">Cairo</span><span style="color:#78716c">⌄</span>
+            </div>
+          </label>
+          <label class="block">
+            <span class="text-sm font-semibold text-stone-700">اللون</span>
+            <div id="colorSwatch" class="mt-1 block h-10 w-16 cursor-pointer rounded border border-stone-300" style="padding:4px;"><div id="colorFill" style="width:100%;height:100%;border-radius:2px;"></div></div>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 · DOWNLOAD -->
+  <div id="s5">
+    <div id="downloadCard" class="scaled" style="width:640px;">
+      <div class="rounded-2xl bg-white p-5 shadow-sm">
+        <h2 class="mb-3 text-lg font-bold">3. التنزيل</h2>
+        <div class="flex flex-wrap gap-3">
+          <button id="zipBtn" class="rounded-lg bg-amber-700 px-5 py-2.5 font-bold text-white">ZIP: ملف PDF لكل واحد (4)</button>
+          <button class="rounded-lg border border-amber-700 px-5 py-2.5 font-bold text-amber-800">PDF واحد للطباعة</button>
+        </div>
+        <div id="progressWrap" class="mt-4">
+          <div class="h-2 overflow-hidden rounded-full bg-stone-200"><div id="progressBar" class="h-full bg-amber-600" style="width:0%"></div></div>
+          <p id="progressText" class="mt-1 text-sm text-stone-600"></p>
+        </div>
+      </div>
+    </div>
+    <div id="thumbs"></div>
+  </div>
+
+  <!-- 6 · OUTRO -->
+  <div id="s6">
+    <div id="outroTitle" class="abs display" style="left:0;width:1920px;top:300px;text-align:center;font-size:136px;line-height:1.2;"><span>🎓</span> مولّد الشهادات</div>
+    <div id="outroLine" class="gold-line" style="left:780px;top:500px;width:360px;"></div>
+    <div id="outroSub" class="abs" style="left:0;width:1920px;top:545px;text-align:center;font:500 52px 'IBM Plex Sans Arabic',sans-serif;color:#44403c;">كله بالمتصفح. ملفاتك ما بتطلع من جهازك.</div>
+    <!-- the app's real header controls -->
+    <div id="outroControls" class="scaled" style="width:420px;">
+      <div style="display:flex;gap:8px;justify-content:center;align-items:center;" dir="rtl">
+        <div class="flex shrink-0 rounded-lg border border-stone-300 bg-white p-0.5 text-sm">
+          <button class="rounded-md px-2.5 py-1 font-semibold bg-stone-800 text-white">فاتح</button>
+          <button class="rounded-md px-2.5 py-1 font-semibold text-stone-600">داكن</button>
+          <button class="rounded-md px-2.5 py-1 font-semibold text-stone-600">تلقائي</button>
+        </div>
+        <button class="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-semibold">English</button>
+      </div>
+    </div>
+  </div>
+
+  <svg id="cursor" class="abs" width="44" height="54" viewBox="0 0 22 27" style="left:0;top:0;z-index:50;filter:drop-shadow(0 4px 6px rgb(0 0 0 / .3));">
+    <path d="M1.5 1.5 L1.5 21 L6.6 16.4 L10 24.5 L13.6 23 L10.3 15.2 L17.2 15.2 Z" fill="#1f1c17" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/>
+  </svg>
+  <div id="ripple" class="ripple abs" style="z-index:49;"></div>
+</div>
+<script type="module" src="main.js"></script>
+</body>
+</html>
